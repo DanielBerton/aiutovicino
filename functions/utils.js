@@ -18,3 +18,4 @@ module.exports.getNextDayDate = function() {
 
     return date;
 }
+
