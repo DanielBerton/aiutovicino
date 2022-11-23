@@ -11,7 +11,8 @@ const db = getFirestore();
 exports.getUserById = functions.region("europe-west1").https.onRequest(async (request, response) => {
     let token = utils.generateToken()
 
-    const querySnapshot = await db.collection("users").doc(request.body.userId).get();
+    functions.logger.info("[getUserById] userId: ", request.body.userId);
+    const querySnapshot = await db.collection("users").where("id", "==", request.body.userId).get();
     const user = querySnapshot.docs.map((doc) => {
         functions.logger.info("[getUserById] user data: ", doc.data());
         functions.logger.info("[getUserById] user id: ", doc.id);
@@ -38,10 +39,10 @@ exports.login = functions.region("europe-west1").https.onRequest(async (request,
         return doc.data();
     });
 
-    /* if user not present or wrong credential then return status 500 and error message */
-    if (!user.length) {
+    /* if user not present, not approved or wrong credential then return status 500 and error message */
+    if (!user.length || !user.approved) {
         const responseKo = {
-            message: "Utente non registrato o credenziali sbagliate"
+            message: "Utente non registrato/approvato o credenziali sbagliate"
         }
         response.status(500).send(responseKo);
     }
@@ -96,7 +97,6 @@ exports.registration = functions.region("europe-west1").https.onRequest(async (r
 
 
     let dataToStore = {
-        id : "us-1",
         date: Timestamp.now(),
         description: request.body.description,
         email : request.body.email,
@@ -110,7 +110,13 @@ exports.registration = functions.region("europe-west1").https.onRequest(async (r
     // Add a new document in collection "users"
     const res = await db.collection('users').add(dataToStore);
 
+    db.collection('users').doc(res.id).update({
+        'id': res.id
+      });
+
     console.log('Added document with ID: ', res.id);
+    dataToStore.id = res.id;
+
     response.send(dataToStore);
 
 });
