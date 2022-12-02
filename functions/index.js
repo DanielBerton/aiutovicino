@@ -3,6 +3,7 @@ const { initializeApp, applicationDefault, cert } = require('firebase-admin/app'
 const { getFirestore, Timestamp, FieldValue } = require('firebase-admin/firestore');
 var utils = require('./utils.js');
 exports.applications = require('./applications');
+exports.applications = require('./announcements');
 
 const app = require('./initFirebase.js')
 
