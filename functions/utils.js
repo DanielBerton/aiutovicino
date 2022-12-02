@@ -1,3 +1,4 @@
+const CryptoJS = require("crypto-js");
 
 module.exports.generateToken = function () {
     var rand = function() {
@@ -17,5 +18,13 @@ module.exports.getNextDayDate = function() {
     date.setDate(date.getDate() + 1);
 
     return date;
+}
+
+module.exports.encrypt = function(string) {
+    return CryptoJS.enc.Base64.stringify(CryptoJS.enc.Utf8.parse(string));
+}
+
+module.exports.decrypt = function(string) {
+    return CryptoJS.enc.Base64.parse(string).toString(CryptoJS.enc.Utf8);
 }
 
