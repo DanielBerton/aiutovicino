@@ -31,6 +31,7 @@ exports.getAnnouncementById = functions.region("europe-west1").https.onRequest(a
  */
 exports.insertAnnouncement = functions.region("europe-west1").https.onRequest(async (request, response) => {
 
+    /** Default approved id category NOT courses */
     let dataToStore = {
         date: Timestamp.now(),
         description: request.body.description,
@@ -38,7 +39,7 @@ exports.insertAnnouncement = functions.region("europe-west1").https.onRequest(as
         idUser: request.body.idUser,
         place: request.body.place,
         partecipantsNumber: request.body.partecipantsNumber,
-        approved: false
+        approved: request.body.idCategory == 1 ? false : true
     };
 
     const res = await db.collection('announcements').add(dataToStore);
