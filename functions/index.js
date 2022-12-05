@@ -5,6 +5,7 @@ var utils = require('./utils.js');
 exports.applications = require('./applications');
 exports.announcements = require('./announcements');
 exports.user = require('./user');
+exports.categories = require('./categories');
 
 const app = require('./initFirebase.js')
 
@@ -27,20 +28,19 @@ exports.login = functions.region("europe-west1").https.onRequest(async (request,
         return doc.data();
     });
 
-    functions.logger.info('-------- password --------', !user || !user.approved || request.body.password+user[0].id != utils.decrypt(user[0].password))
-    functions.logger.info('-------- ID --------', user[0].id)
-    functions.logger.info('-------- encrypt password --------', utils.encrypt(request.body.password+user[0].id))
-    functions.logger.info('-------- encrypt decrypt --------',  utils.decrypt(user[0].password))
 
 
     /* if user not present, not approved or wrong credential then return status 500 and error message */
-    if (!user || !user[0].approved || request.body.password+user[0].id != utils.decrypt(user[0].password)) {
+    if (!user || !user[0] || !user[0].approved || request.body.password+user[0].id != utils.decrypt(user[0].password)) {
         const responseKo = {
             message: "Utente non registrato/approvato o credenziali sbagliate"
         }
         response.status(500).send(responseKo);
         response.end()
     }
+
+    functions.logger.info('-------- ID --------', user[0].id)
+
     /* Check if already exists an open session for this user */
     const queryUserSession = await db.collection("usersessions")
         .where("userId", "==", user[0].id)
@@ -73,10 +73,13 @@ exports.login = functions.region("europe-west1").https.onRequest(async (request,
         userId: user[0].id
     };
 
+    user[0].expiration = expirationTime,
+    user[0].token = token;
+
     // Add a new document in collection "usersessions" with ID 'token'
     const res = await db.collection('usersessions').doc(token).set(dataToStore);
 
-    response.send(dataToStore);
+    response.send(user);
 
 });
 
@@ -113,7 +116,8 @@ exports.registration = functions.region("europe-west1").https.onRequest(async (r
         name : request.body.name,
         surname : request.body.surname,
         nickname : request.body.nickname,
-        approved: false
+        approved: false,
+        admin: false
     };
 
     // Add a new document in collection "users"
