@@ -1,5 +1,5 @@
 const functions = require("firebase-functions");
-const { getFirestore } = require('firebase-admin/firestore');
+const { getFirestore, Timestamp } = require('firebase-admin/firestore');
 const app = require('./initFirebase.js')
 
 const db = getFirestore();
@@ -47,7 +47,7 @@ exports.insertAnnouncement = functions.region("europe-west1").https.onRequest(as
         'id': res.id
     });
 
-    dataToStore.id = id
+    dataToStore.id = res.id
 
     response.send(dataToStore);
 

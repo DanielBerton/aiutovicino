@@ -3,30 +3,13 @@ const { initializeApp, applicationDefault, cert } = require('firebase-admin/app'
 const { getFirestore, Timestamp, FieldValue } = require('firebase-admin/firestore');
 var utils = require('./utils.js');
 exports.applications = require('./applications');
-exports.applications = require('./announcements');
+exports.announcements = require('./announcements');
+exports.user = require('./user');
 
 const app = require('./initFirebase.js')
 
 const db = getFirestore();
 
-
-// // init database only once
-// initializeApp();
-// const db = getFirestore();
-
-exports.getUserById = functions.region("europe-west1").https.onRequest(async (request, response) => {
-    let token = utils.generateToken()
-
-    functions.logger.info("[getUserById] userId: ", request.body.userId);
-    const querySnapshot = await db.collection("users").where("id", "==", request.body.userId).get();
-    const user = querySnapshot.docs.map((doc) => {
-        functions.logger.info("[getUserById] user data: ", doc.data());
-        functions.logger.info("[getUserById] user id: ", doc.id);
-        return doc.data()
-    });
-    user.token = token;
-    response.send(user);
-});
 
 /**
  * Login function
@@ -114,11 +97,13 @@ exports.registration = functions.region("europe-west1").https.onRequest(async (r
         return doc.data();
     });
 
-    if (user) {
+    console.log('User: ', user, ' is present: ', user , user.length)
+    if (user.length) {
         const responseKo = {
             message: "Utente già registrato con questa email"
         }
         response.status(500).send(responseKo);
+        response.end()
     }
 
     let dataToStore = {
@@ -143,6 +128,7 @@ exports.registration = functions.region("europe-west1").https.onRequest(async (r
     dataToStore.id = res.id;
 
     response.send(dataToStore);
+    response.end()
 
 });
 
