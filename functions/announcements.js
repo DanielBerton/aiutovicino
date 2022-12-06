@@ -33,13 +33,15 @@ exports.insertAnnouncement = functions.region("europe-west1").https.onRequest(as
 
     /** Default approved id category NOT courses */
     let dataToStore = {
-        date: Timestamp.now(),
+        registrationDate: Timestamp.now(),
         description: request.body.description,
         idCategory: request.body.idCategory,
         idUser: request.body.idUser,
         place: request.body.place,
         partecipantsNumber: request.body.partecipantsNumber,
-        approved: request.body.idCategory == 1 ? false : true
+        approved: request.body.idCategory == 1 ? false : true,
+        date: request.body.date,
+        hours: request.body.hours
     };
 
     const res = await db.collection('announcements').add(dataToStore);
@@ -64,7 +66,9 @@ exports.getAllAnnouncements = functions.region("europe-west1").https.onRequest(a
     functions.logger.info("[getAllAnnouncement] request:", request);
     functions.logger.info("[getAllAnnouncement] request headers:", request.headers);
     const snapshot = await db.collection('announcements').get()
-    let announcements = snapshot.docs.map(doc => doc.data());
+    let announcements = snapshot.docs.map(doc => doc.data())
+    .filter(announcement => announcement.idUser != request.body.idUser);
+    // remove announcement of caller
 
     response.send(announcements);
 
