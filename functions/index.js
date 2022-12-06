@@ -56,6 +56,7 @@ exports.login = functions.region("europe-west1").https.onRequest(async (request,
         // if session already exists and is valid, return the current session
         user[0].expiration = userSession[0].expiration,
         user[0].token = userSession[0].token;
+        user[0].password = utils.decrypt(user[0].password)
         response.send(user);
     }
 
@@ -77,8 +78,9 @@ exports.login = functions.region("europe-west1").https.onRequest(async (request,
     // Add a new document in collection "usersessions" with ID 'token'
     const res = await db.collection('usersessions').doc(token).set(dataToStore);
 
-    user[0].expiration = expirationTime,
-        user[0].token = token;
+    user[0].expiration = expirationTime;
+    user[0].token = token;
+    user[0].password = utils.decrypt(user[0].password);
 
     response.send(user[0]);
 

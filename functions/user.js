@@ -60,7 +60,8 @@ exports.updateUser = functions.region("europe-west1").https.onRequest(async (req
     user[0].name = request.body.name;
     user[0].nickname = request.body.nickname;
     user[0].email = request.body.email;
-    user[0].password = request.body.password;
+    //user[0].password = request.body.password;
+    user[0].password = utils.encrypt(request.body.password + user[0]);
     user[0].description = request.body.description;
 
     functions.logger.info("[updateUser] new user: ", JSON.stringify(user[0]));
