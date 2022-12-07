@@ -2,12 +2,13 @@ const functions = require("firebase-functions");
 const { initializeApp, applicationDefault, cert } = require('firebase-admin/app');
 const { getFirestore, Timestamp, FieldValue } = require('firebase-admin/firestore');
 var utils = require('./utils.js');
+const app = require('./initFirebase.js')
 exports.applications = require('./applications');
 exports.announcements = require('./announcements');
 exports.user = require('./user');
 exports.categories = require('./categories');
+exports.ranking = require('./ranking');
 
-const app = require('./initFirebase.js')
 
 const db = getFirestore();
 

@@ -41,7 +41,9 @@ exports.insertAnnouncement = functions.region("europe-west1").https.onRequest(as
         partecipantsNumber: request.body.partecipantsNumber,
         approved: request.body.idCategory == 1 ? false : true,
         date: request.body.date,
-        hours: request.body.hours
+        hours: request.body.hours,
+        status: 'open',
+        coins: request.body.coins
     };
 
     const res = await db.collection('announcements').add(dataToStore);
@@ -98,40 +100,8 @@ exports.getAnnouncementsByUserId = functions.region("europe-west1").https.onRequ
  * @params
  * @return
  */
-exports.applyToAnnouncement = functions.region("europe-west1").https.onRequest(async (request, response) => {
-
-    // const queryAnnouncements = await db.collection("announcements")
-    //     .doc(request.body.id)
-    //     .get();
-
-    // const announcements = queryAnnouncements.docs.map((doc) => {
-    //     return doc.data();
-    // });
-
-    db.collection("announcements").doc(request.body.id).update({
-        "userApplyed": request.body.userId
-    });
-
-    response.send("OK");
-
-});
-
-
-/**
- * Get announcement by user id
- * @params
- * @return
- */
  exports.applyToAnnouncement = functions.region("europe-west1").https.onRequest(async (request, response) => {
 
-    // const queryAnnouncements = await db.collection("announcements")
-    //     .doc(request.body.id)
-    //     .get();
-
-    // const announcements = queryAnnouncements.docs.map((doc) => {
-    //     return doc.data();
-    // });
-
     db.collection("announcements").doc(request.body.id).update({
         "userApplyed": request.body.userId
     });
@@ -141,7 +111,7 @@ exports.applyToAnnouncement = functions.region("europe-west1").https.onRequest(a
 });
 
 /**
- * Get announcement by user id
+ * Approve announcement, only for admin
  * @params id
  * @params userId
  * @return
