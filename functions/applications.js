@@ -12,9 +12,8 @@ const db = getFirestore();
  exports.getUserApplications = functions.region("europe-west1").https.onRequest(async (request, response) => {
 
     // validateToken
-
     const queryApplications = await db.collection("applications")
-        .where("idUser", "==", request.body.idUser)
+        .where("userId", "==", request.body.userId)
     .get();
 
     const applications = queryApplications.docs.map((doc) => {

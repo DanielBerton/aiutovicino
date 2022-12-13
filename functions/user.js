@@ -11,6 +11,21 @@ const db = getFirestore();
  */
  exports.getNotApprovedUsers = functions.region("europe-west1").https.onRequest(async (request, response) => {
 
+    const queryAdminUserId = await db.collection("users").where("id", "==", request.body.userId).get();
+    const userAdmin = queryAdminUserId.docs.map((doc) => {
+        return doc.data()
+    });
+
+    functions.logger.info("[updateUser] userAdmin: ", userAdmin[0]);
+    /** check if user is admin */
+    if (!userAdmin[0] || !userAdmin[0].admin) {
+        const responseKo = {
+            message: "Utente non amministratore, azione non possibile"
+        }
+        response.status(500).send(responseKo);
+        response.end()
+    }
+
     const queryUser = await db.collection("users")
         .where("approved", "==", false)
     .get();
@@ -101,5 +116,33 @@ exports.updateUser = functions.region("europe-west1").https.onRequest(async (req
     });
 
     response.send('User approved');
+
+});
+
+/**
+ * Approve User, only for admin
+ * @params adminUserId, userId
+ * @return string
+ */
+exports.deleteUser = functions.region("europe-west1").https.onRequest(async (request, response) => {
+
+    const queryAdminUserId = await db.collection("users").where("id", "==", request.body.adminUserId).get();
+    const userAdmin = queryAdminUserId.docs.map((doc) => {
+        return doc.data()
+    });
+
+    functions.logger.info("[updateUser] userAdmin: ", userAdmin[0]);
+    /** check if user is admin */
+    if (!userAdmin[0] || !userAdmin[0].admin) {
+        const responseKo = {
+            message: "Utente non amministratore, azione non possibile"
+        }
+        response.status(500).send(responseKo);
+        response.end()
+    }
+
+    const res = await db.collection('users').doc(request.body.userId).delete();
+
+    response.send('Utente eliminato');
 
 });
