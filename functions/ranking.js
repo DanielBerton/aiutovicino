@@ -17,11 +17,17 @@ const db = getFirestore();
         return doc.data();
     });
 
-    let total = userCoins.map(userCoin => userCoin.nCoins).reduce((sum, li) => sum + li, 0)
-    functions.logger.info('total: ', total);
+    functions.logger.info('[getUserScore] userCoins: ', JSON.stringify(userCoins));
+
+    let coins = userCoins.map(userCoin => userCoin.nCoins);
+
+    functions.logger.info('[getUserScore] coins: ', coins);
+
+    let total = userCoins.map(userCoin => userCoin.nCoins).filter(coin => coin != undefined).reduce((sum, li) => sum + li, 0)
+    functions.logger.info('[getUserScore] total: ', total);
 
     const res = {
-        "score": total
+        "score": total ? total : 0
     }
     response.send(res);
 });

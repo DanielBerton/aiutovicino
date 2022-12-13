@@ -1,5 +1,5 @@
 const functions = require("firebase-functions");
-const { getFirestore, Timestamp } = require('firebase-admin/firestore');
+const { getFirestore, Timestamp, FieldValue } = require('firebase-admin/firestore');
 const app = require('./initFirebase.js')
 
 const db = getFirestore();
@@ -35,17 +35,20 @@ exports.insertAnnouncement = functions.region("europe-west1").https.onRequest(as
     let dataToStore = {
         registrationDate: Timestamp.now(),
         description: request.body.description,
-        idCategory: request.body.idCategory,
+        idCategory: (+request.body.idCategory), // cast to number
         userId: request.body.userId,
         place: request.body.place,
-        partecipantsNumber: request.body.partecipantsNumber,
-        approved: request.body.idCategory == 1 ? false : true,
+        partecipantsNumber: (+request.body.partecipantsNumber),
+        approved: (+request.body.idCategory) == 1 ? false : true,
         date: request.body.date,
         hours: request.body.hours,
         status: 'open',
-        coins: request.body.coins,
-        title: request.body.title
+        coins: (+request.body.coins), // cast to number
+        title: request.body.title,
+        userApplied: []
     };
+
+    functions.logger.info("[insertAnnouncement] dataToStore:", dataToStore);
 
     const res = await db.collection('announcements').add(dataToStore);
 
@@ -69,9 +72,17 @@ exports.getAllAnnouncements = functions.region("europe-west1").https.onRequest(a
     functions.logger.info("[getAllAnnouncement] request:", request);
     functions.logger.info("[getAllAnnouncement] request headers:", request.headers);
     const announcementsQuery = await db.collection('announcements').get()
-    let announcements = announcementsQuery.docs.map(doc => doc.data())
-    .filter(announcement => announcement.userId != request.body.userId);
-    // remove announcement of caller
+    let announcements = announcementsQuery.docs.map(doc => doc.data());
+    functions.logger.info("[getAllAnnouncement] announcements:", announcements);
+    announcements = announcements.filter(announcement => announcement.userId != request.body.userId)
+                .filter(announcement => announcement.approved == true)
+                .filter(announcement => {
+                    functions.logger.info("[getAllAnnouncement] userApplied length:", announcement.userApplied.length);
+                    functions.logger.info("[getAllAnnouncement] partecipantsNumber:", announcement.partecipantsNumber);
+                    functions.logger.info("[getAllAnnouncement] idAnnouncement:", announcement, " filter ", announcement.userApplied.length < announcement.partecipantsNumber);
+                    return announcement.userApplied.length < announcement.partecipantsNumber
+                })
+    // remove announcement of caller and not approved or maximum partecipants
 
     response.send(announcements);
 
@@ -104,7 +115,7 @@ exports.getAnnouncementsByUserId = functions.region("europe-west1").https.onRequ
  exports.applyToAnnouncement = functions.region("europe-west1").https.onRequest(async (request, response) => {
 
     db.collection("announcements").doc(request.body.id).update({
-        "userApplyed": request.body.userId
+        "userApplied": FieldValue.arrayUnion(request.body.userId)
     });
 
     /** Default approved id category NOT courses */
@@ -160,7 +171,8 @@ exports.getAnnouncementsByUserId = functions.region("europe-west1").https.onRequ
     }
 
     db.collection("announcements").doc(request.body.id).update({
-        "userApplyed": request.body.userId
+        "approved": true,
+        "coins": request.body.coins ? request.body.coins : queryAnnouncement.data().coins
     });
 
     response.send("OK");
@@ -192,7 +204,7 @@ exports.getAnnouncementsByUserId = functions.region("europe-west1").https.onRequ
 
     console.log('[deleteAnnouncement] user: ', user.data());
     console.log('[deleteAnnouncement] announcement: ', announcement.data());
-    if (!user || !user.data() || user.id != announcement.data().userId) {
+    if (!user || !user.data() || user.id != announcement.data().userId || user.data().admin  ) {
         const responseKo = {
             message: "Azione questo annuncio non appartiene all'utente richiedente"
         }
@@ -267,7 +279,7 @@ exports.getAnnouncementsAppliedByUserId = functions.region("europe-west1").https
     const announcementsQuery = await db.collection('announcements').get()
     let announcements = announcementsQuery.docs.map(doc => doc.data())
     functions.logger.info("[getCoursesToApprove] announcements: ", JSON.stringify(announcements));
-    announcements = announcements.filter(announcement => announcement.approved == true && announcement.idCategory == 1);
+    announcements = announcements.filter(announcement => announcement.approved == false && announcement.idCategory == 1);
 
     functions.logger.info("[getCoursesToApprove] filtered announcements: ", JSON.stringify(announcements));
     //&& announcement.idCategory == 1
