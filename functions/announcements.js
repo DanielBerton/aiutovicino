@@ -36,14 +36,15 @@ exports.insertAnnouncement = functions.region("europe-west1").https.onRequest(as
         registrationDate: Timestamp.now(),
         description: request.body.description,
         idCategory: request.body.idCategory,
-        idUser: request.body.idUser,
+        userId: request.body.userId,
         place: request.body.place,
         partecipantsNumber: request.body.partecipantsNumber,
         approved: request.body.idCategory == 1 ? false : true,
         date: request.body.date,
         hours: request.body.hours,
         status: 'open',
-        coins: request.body.coins
+        coins: request.body.coins,
+        title: request.body.title
     };
 
     const res = await db.collection('announcements').add(dataToStore);
@@ -67,9 +68,9 @@ exports.getAllAnnouncements = functions.region("europe-west1").https.onRequest(a
 
     functions.logger.info("[getAllAnnouncement] request:", request);
     functions.logger.info("[getAllAnnouncement] request headers:", request.headers);
-    const snapshot = await db.collection('announcements').get()
-    let announcements = snapshot.docs.map(doc => doc.data())
-    .filter(announcement => announcement.idUser != request.body.idUser);
+    const announcementsQuery = await db.collection('announcements').get()
+    let announcements = announcementsQuery.docs.map(doc => doc.data())
+    .filter(announcement => announcement.userId != request.body.userId);
     // remove announcement of caller
 
     response.send(announcements);
@@ -84,7 +85,7 @@ exports.getAllAnnouncements = functions.region("europe-west1").https.onRequest(a
 exports.getAnnouncementsByUserId = functions.region("europe-west1").https.onRequest(async (request, response) => {
 
     const queryAnnouncements = await db.collection("announcements")
-        .where("idUser", "==", request.body.idUser)
+        .where("userId", "==", request.body.userId)
         .get();
 
     const announcements = queryAnnouncements.docs.map((doc) => {
@@ -106,7 +107,23 @@ exports.getAnnouncementsByUserId = functions.region("europe-west1").https.onRequ
         "userApplyed": request.body.userId
     });
 
-    response.send("OK");
+    /** Default approved id category NOT courses */
+    let dataToStore = {
+        date: Timestamp.now(),
+        idAnnouncement: request.body.id,
+        userId: request.body.userId,
+        status: true
+    };
+
+    const res = await db.collection('applications').add(dataToStore);
+
+    db.collection('applications').doc(res.id).update({
+        'id': res.id
+    });
+
+    dataToStore.id = res.id
+
+    response.send(dataToStore);
 
 });
 
@@ -133,13 +150,13 @@ exports.getAnnouncementsByUserId = functions.region("europe-west1").https.onRequ
         response.status(500).send(responseKo);
         response.end()
     }
-    console.log('user: ', user);
+
     if (!user || !user.data() || !user.data().admin) {
         const responseKo = {
             message: "Azione non ammessa per questo utente, è necessario il ruolo di amministratore"
         }
         response.status(500).send(responseKo);
-        response.end()
+        response.end();
     }
 
     db.collection("announcements").doc(request.body.id).update({
@@ -150,3 +167,139 @@ exports.getAnnouncementsByUserId = functions.region("europe-west1").https.onRequ
 
 });
 
+/**
+ * Delete announcement
+ * @params userId, announcementId
+ * @return
+ */
+ exports.deleteAnnouncement = functions.region("europe-west1").https.onRequest(async (request, response) => {
+
+    const user = await db.collection("users")
+    .doc(request.body.userId)
+    .get();
+
+    const announcement = await db.collection("announcements")
+    .doc(request.body.announcementId)
+    .get();
+
+    if (!announcement.data()) {
+        const responseKo = {
+            message: "Annuncio non esistente"
+        }
+        response.status(500).send(responseKo);
+        response.end()
+    }
+
+    console.log('[deleteAnnouncement] user: ', user.data());
+    console.log('[deleteAnnouncement] announcement: ', announcement.data());
+    if (!user || !user.data() || user.id != announcement.data().userId) {
+        const responseKo = {
+            message: "Azione questo annuncio non appartiene all'utente richiedente"
+        }
+        response.status(500).send(responseKo);
+        response.end()
+    }
+
+    const res = await db.collection('announcements').doc(request.body.announcementId).delete();
+
+    response.send('Annuncio eliminato');
+});
+
+/**
+ * Get announcement where the user has applied
+ * @params userId
+ * @return
+ */
+exports.getAnnouncementsAppliedByUserId = functions.region("europe-west1").https.onRequest(async (request, response) => {
+
+    const queryApplications = await db.collection("applications")
+    .where("userId", "==", request.body.userId)
+    .get();
+
+    const applications = queryApplications.docs.map((doc) => {
+        return doc.data();
+    });
+
+    functions.logger.info("[getAnnouncementsAppliedByUserId] applications: ", JSON.stringify(applications));
+
+    let annoucementIds = applications.map(application => application.idAnnouncement);
+
+    if (!annoucementIds.length) {
+        response.send(annoucementIds);
+        response.end();
+    }
+
+    functions.logger.info("[getAnnouncementsAppliedByUserId] annoucementIds: ", JSON.stringify(annoucementIds));
+
+
+    const queryAnnouncements = await db.collection("announcements")
+        .where("id", "in", annoucementIds)
+        .get();
+
+    const announcements = queryAnnouncements.docs.map((doc) => {
+        return doc.data();
+    });
+
+    response.send(announcements);
+
+});
+
+
+/**
+ * Get announcement of category course to approve (Admin users only)
+ * @params userId
+ * @return
+ */
+ exports.getCoursesToApprove = functions.region("europe-west1").https.onRequest(async (request, response) => {
+
+    const user = await db.collection("users")
+    .doc(request.body.userId)
+    .get();
+
+    if (!user || !user.data() || !user.data().admin) {
+        const responseKo = {
+            message: "Azione non ammessa per questo utente, è necessario il ruolo di amministratore"
+        }
+        response.status(500).send(responseKo);
+        response.end();
+    }
+
+    const announcementsQuery = await db.collection('announcements').get()
+    let announcements = announcementsQuery.docs.map(doc => doc.data())
+    functions.logger.info("[getCoursesToApprove] announcements: ", JSON.stringify(announcements));
+    announcements = announcements.filter(announcement => announcement.approved == true && announcement.idCategory == 1);
+
+    functions.logger.info("[getCoursesToApprove] filtered announcements: ", JSON.stringify(announcements));
+    //&& announcement.idCategory == 1
+
+    response.send(announcements);
+
+});
+
+/**
+ * Approve Course (Admin users only)
+ * @params userId, announcementId
+ * @return string
+ */
+ exports.approveCourse = functions.region("europe-west1").https.onRequest(async (request, response) => {
+
+    const user = await db.collection("users")
+    .doc(request.body.userId)
+    .get();
+
+    if (!user || !user.data() || !user.data().admin) {
+        const responseKo = {
+            message: "Azione non ammessa per questo utente, è necessario il ruolo di amministratore"
+        }
+        response.status(500).send(responseKo);
+        response.end();
+    }
+
+    /** update announcements */
+    db.collection('announcements').doc(request.body.announcementId).update({
+        'approved': true
+    });
+
+    response.send('Course approved');
+
+});
