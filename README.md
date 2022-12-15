@@ -49,5 +49,4 @@ Per l'utilizzo di AiutoVicino è necessario:
 
 Per la versione 1.0 del codice le seguenti funzioni non sono ancora funzionanti:
 - notifica ad utente quando la propria registrazione viene convalidata
-- conferma avvenuta attività per attività svolta con conseguente assegnazione coin
 
