@@ -213,7 +213,7 @@ exports.getAnnouncementsByUserId = functions.region("europe-west1").https.onRequ
             message: "Azione questo annuncio non appartiene all'utente richiedente"
         }
         response.status(500).send(responseKo);
-        response.end()
+        response.end();
     }
 
     const res = await db.collection('announcements').doc(request.body.announcementId).delete();

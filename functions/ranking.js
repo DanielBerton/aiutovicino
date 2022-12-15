@@ -19,11 +19,11 @@ const db = getFirestore();
 
     functions.logger.info('[getUserScore] userCoins: ', JSON.stringify(userCoins));
 
-    let coins = userCoins.map(userCoin => userCoin.nCoins);
+    let coins = userCoins.map(userCoin => userCoin.nCoin);
 
     functions.logger.info('[getUserScore] coins: ', coins);
 
-    let total = userCoins.map(userCoin => userCoin.nCoins).filter(coin => coin != undefined).reduce((sum, li) => sum + li, 0)
+    let total = userCoins.map(userCoin => userCoin.nCoin).filter(coin => coin != undefined).reduce((sum, li) => sum + li, 0)
     functions.logger.info('[getUserScore] total: ', total);
 
     const res = {
