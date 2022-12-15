@@ -82,6 +82,7 @@ exports.getAllAnnouncements = functions.region("europe-west1").https.onRequest(a
                     functions.logger.info("[getAllAnnouncement] idAnnouncement:", announcement, " filter ", announcement.userApplied.length < announcement.partecipantsNumber);
                     return announcement.userApplied.length < announcement.partecipantsNumber
                 })
+                .filter(announcement => !announcement.userApplied.includes(request.body.userId))
     // remove announcement of caller and not approved or maximum partecipants
 
     response.send(announcements);
@@ -146,6 +147,9 @@ exports.getAnnouncementsByUserId = functions.region("europe-west1").https.onRequ
  */
  exports.approveAnnouncement = functions.region("europe-west1").https.onRequest(async (request, response) => {
 
+    functions.logger.info("[approveAnnouncement] request:", JSON.stringify(request.body));
+    functions.logger.info("[approveAnnouncement] request:", request.body.coins);
+
     const user = await db.collection("users")
     .doc(request.body.userId)
     .get();
@@ -172,7 +176,7 @@ exports.getAnnouncementsByUserId = functions.region("europe-west1").https.onRequ
 
     db.collection("announcements").doc(request.body.id).update({
         "approved": true,
-        "coins": request.body.coins ? request.body.coins : queryAnnouncement.data().coins
+        "coins": request.body.coins ? +request.body.coins : queryAnnouncement.data().coins
     });
 
     response.send("OK");
@@ -204,7 +208,7 @@ exports.getAnnouncementsByUserId = functions.region("europe-west1").https.onRequ
 
     console.log('[deleteAnnouncement] user: ', user.data());
     console.log('[deleteAnnouncement] announcement: ', announcement.data());
-    if (!user || !user.data() || user.id != announcement.data().userId || user.data().admin  ) {
+    if (!user || !user.data() || user.id != announcement.data().userId || !user.data().admin  ) {
         const responseKo = {
             message: "Azione questo annuncio non appartiene all'utente richiedente"
         }
