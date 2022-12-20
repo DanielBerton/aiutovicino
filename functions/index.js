@@ -21,6 +21,14 @@ const db = getFirestore();
  */
 exports.login = functions.region("europe-west1").https.onRequest(async (request, response) => {
 
+    // db.collection('mail').add({
+    //     to: 'daniele.berton2@gmail.com',
+    //     message: {
+    //       subject: 'Hello from Firebase!',
+    //       html: 'This is an <code>HTML</code> email body.',
+    //     },
+    //   })
+
     const queryUser = await db.collection("users")
         .where("email", "==", request.body.email)
         .get();
@@ -34,12 +42,13 @@ exports.login = functions.region("europe-west1").https.onRequest(async (request,
         const responseKo = {
             message: "Utente non registrato/approvato o credenziali sbagliate"
         }
+        functions.logger.info('error: %s', responseKo)
         response.status(500).send(responseKo);
         response.end();
         return;
     }
 
-    functions.logger.info('-------- ID --------', user[0].id)
+    functions.logger.info('-------- ID -------- [%s]', user[0].id)
     const score = await rankingService.getScore(user[0].id);
 
     /* Check if already exists an open session for this user */
@@ -49,18 +58,19 @@ exports.login = functions.region("europe-west1").https.onRequest(async (request,
         .get();
 
     const userSession = queryUserSession.docs.map((doc) => {
-        functions.logger.info("[login] userSession already exists");
         return doc.data();
     });
 
-    functions.logger.info("[login] userSession : ", userSession[0]);
+    functions.logger.info("[login] userSession : ", JSON.stringify(userSession[0]));
 
     if (userSession[0]) {
+        functions.logger.info("[login] return open session");
         // if session already exists and is valid, return the current session
         user[0].expiration = userSession[0].expiration,
         user[0].token = userSession[0].token;
         user[0].score = score.score;
         response.send(user);
+        return;
     }
 
     /**
