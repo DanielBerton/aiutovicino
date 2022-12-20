@@ -2,6 +2,7 @@ const functions = require("firebase-functions");
 const { getFirestore } = require('firebase-admin/firestore');
 const app = require('./initFirebase.js')
 var utils = require('./utils.js');
+const authService = require('./authService.js')
 
 const db = getFirestore();
 
@@ -116,6 +117,20 @@ exports.updateUser = functions.region("europe-west1").https.onRequest(async (req
         'approved': true
     });
 
+    /** L'utente approvato ha di base 100 punti */
+
+    // add record on UserCoin
+    let userCoin = {
+        userId: request.body.userId,
+        idAnnouncement: '',
+        nCoin: 100
+    };
+
+    functions.logger.info('userCoin: ', JSON.stringify(userCoin));
+
+    await db.collection('usercoins').add(userCoin);
+    await utils.updateRanking(request.body.userId, userCoin.nCoin);
+
     response.send('User approved');
 
 });
@@ -139,7 +154,8 @@ exports.deleteUser = functions.region("europe-west1").https.onRequest(async (req
             message: "Utente non amministratore, azione non possibile"
         }
         response.status(500).send(responseKo);
-        response.end()
+        response.end();
+        return;
     }
 
     const res = await db.collection('users').doc(request.body.userId).delete();

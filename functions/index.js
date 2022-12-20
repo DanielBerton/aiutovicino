@@ -9,6 +9,8 @@ exports.user = require('./user');
 exports.categories = require('./categories');
 exports.ranking = require('./ranking');
 
+const rankingService = require('./ranking');
+
 
 const db = getFirestore();
 
@@ -36,9 +38,11 @@ exports.login = functions.region("europe-west1").https.onRequest(async (request,
         }
         response.status(500).send(responseKo);
         response.end();
+        return;
     }
 
     functions.logger.info('-------- ID --------', user[0].id)
+    const score = await rankingService.getScore(user[0].id);
 
     /* Check if already exists an open session for this user */
     const queryUserSession = await db.collection("usersessions")
@@ -57,6 +61,7 @@ exports.login = functions.region("europe-west1").https.onRequest(async (request,
         // if session already exists and is valid, return the current session
         user[0].expiration = userSession[0].expiration,
         user[0].token = userSession[0].token;
+        user[0].score = score.score;
         response.send(user);
     }
 
@@ -80,6 +85,7 @@ exports.login = functions.region("europe-west1").https.onRequest(async (request,
 
     user[0].expiration = expirationTime;
     user[0].token = token;
+    user[0].score = score.score;
 
     response.send(user[0]);
 
