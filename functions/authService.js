@@ -31,6 +31,13 @@ exports.authUser = async function (token, response) {
         return;
     }
 
+    // update expiration date (+24h)
+    const newExpirationTime = Timestamp.fromDate(utils.getNextDayDate())
+    console.log("[authUser] old expiration time %s newExpirationTime %s",userSession[0].expiration, newExpirationTime);
+    db.collection('usersessions').doc(token).update({
+        'expiration': newExpirationTime
+    });
+
     return true;
 
 }
