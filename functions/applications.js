@@ -39,7 +39,7 @@ const db = getFirestore();
 
     const token = request.header("token");
     await authService.authUser(token, response);
-    
+
     // get user data
     const queryUser = await db.collection("users").where("id", "==", request.body.userId).get();
     const user = queryUser.docs.map((doc) => {
@@ -91,18 +91,23 @@ const db = getFirestore();
     else {
 
         // dare i punti a chi ha completato l'annuncio se non è corso
+        // per ogni utente sottoscritto creare un userCoin
+        announcements[0].userApplied.forEach(async userId => {
 
+            functions.logger.info('Inside for userId: ', userId);
+            let userCoin = {
+                userId: userId,
+                idAnnouncement: request.body.idAnnouncement,
+                nCoin: announcements[0].coins
+            };
+
+            functions.logger.info('userCoin: ', JSON.stringify(userCoin));
+
+            await db.collection('usercoins').add(userCoin);
+            await utils.updateRanking(userId, userCoin.nCoin);
+        });
         // for any userApplied => userCoins
-        let userCoin = {
-            userId: request.body.userId,
-            idAnnouncement: request.body.idAnnouncement,
-            nCoin: announcements[0].coins
-        };
 
-        functions.logger.info('userCoin: ', JSON.stringify(userCoin));
-
-        await db.collection('usercoins').add(userCoin);
-        await utils.updateRanking(request.body.userId, userCoin.nCoin);
     }
 
     // cambiare lo status dell'annuncio a completato
