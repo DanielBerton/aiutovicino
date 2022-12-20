@@ -72,6 +72,27 @@ module.exports.updateRanking = async function (userId, coins) {
     }
 }
 
+module.exports.updateRankingNickname = async function (userId, nickname) {
+
+    functions.logger.info('updateRankingNickname userId: [%s] nickname: [%s]', userId, nickname);
+    functions.logger.info('updateRankingNickname userId: [%s] nickname: [%s]', userId, nickname);
+
+    // add or update ranking for this user
+    const queryRanking = await db.collection("ranking")
+        .where("userId", "==", userId)
+        .get();
+
+    const userRanking = queryRanking.docs.map((doc) => {
+        return doc.data();
+    });
+    functions.logger.info('userRanking: ', JSON.stringify(userRanking));
+
+    if (userRanking && userRanking[0]) {
+        // update userNickname with new nickname
+        db.collection("ranking").doc(userRanking[0].id).update({ userNickname: nickname });
+    }
+}
+
 module.exports.getUserCoins = async function (userId) {
     const queryUserCoins = await db.collection("usercoins")
         .where("userId", "==", userId)

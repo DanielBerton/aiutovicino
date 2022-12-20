@@ -82,6 +82,17 @@ exports.updateUser = functions.region("europe-west1").https.onRequest(async (req
         response.end()
     }
 
+    /**
+     * Se veine modificato il nickname eseguiamo
+     * l'update della tabella ranking che contiene il nickname
+     */
+     const hasNicknameChanged = user[0].nickname = request.body.nickname;
+
+     if (hasNicknameChanged) {
+         // update ranking
+         await utils.updateRankingNickname(request.body.userId, request.body.nickname);
+     }
+
     user[0].surname = request.body.surname;
     user[0].name = request.body.name;
     user[0].nickname = request.body.nickname;
@@ -107,13 +118,13 @@ exports.updateUser = functions.region("europe-west1").https.onRequest(async (req
 
     const token = request.header("token");
     await authService.authUser(token, response);
-    
+
     const queryAdminUserId = await db.collection("users").where("id", "==", request.body.adminUserId).get();
     const userAdmin = queryAdminUserId.docs.map((doc) => {
         return doc.data()
     });
 
-    functions.logger.info("[updateUser] userAdmin: ", userAdmin[0]);
+    functions.logger.info("[approveUser] userAdmin: ", userAdmin[0]);
     /** check if user is admin */
     if (!userAdmin[0] || !userAdmin[0].admin) {
         const responseKo = {
