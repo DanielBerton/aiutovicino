@@ -2,6 +2,7 @@ const functions = require("firebase-functions");
 const { getFirestore, Timestamp, FieldValue } = require('firebase-admin/firestore');
 const app = require('./initFirebase.js')
 var utils = require('./utils.js');
+const authService = require('./authService.js')
 
 const db = getFirestore();
 
@@ -11,6 +12,9 @@ const db = getFirestore();
  * @return
  */
 exports.getAnnouncementById = functions.region("europe-west1").https.onRequest(async (request, response) => {
+
+    const token = request.header("token");
+    await authService.authUser(token, response);
 
     const queryAnnouncements = await db.collection("announcements")
         .where("id", "==", request.body.id)
@@ -31,6 +35,9 @@ exports.getAnnouncementById = functions.region("europe-west1").https.onRequest(a
  * @return
  */
 exports.insertAnnouncement = functions.region("europe-west1").https.onRequest(async (request, response) => {
+
+    const token = request.header("token");
+    await authService.authUser(token, response);
 
     /** Rimuovere i coin dall'utente che ha creato il corso
      *  se non sono sufficienti, blocchiamo l'azione
@@ -111,6 +118,9 @@ exports.insertAnnouncement = functions.region("europe-west1").https.onRequest(as
  */
 exports.getAllAnnouncements = functions.region("europe-west1").https.onRequest(async (request, response) => {
 
+    const token = request.header("token");
+    await authService.authUser(token, response);
+
     functions.logger.info("[getAllAnnouncement] request:", request);
     functions.logger.info("[getAllAnnouncement] request headers:", request.headers);
     const announcementsQuery = await db.collection('announcements').get()
@@ -139,6 +149,9 @@ exports.getAllAnnouncements = functions.region("europe-west1").https.onRequest(a
  */
 exports.getAnnouncementsByUserId = functions.region("europe-west1").https.onRequest(async (request, response) => {
 
+    const token = request.header("token");
+    await authService.authUser(token, response);
+
     const queryAnnouncements = await db.collection("announcements")
         .where("userId", "==", request.body.userId)
         .get();
@@ -157,6 +170,9 @@ exports.getAnnouncementsByUserId = functions.region("europe-west1").https.onRequ
  * @return
  */
 exports.applyToAnnouncement = functions.region("europe-west1").https.onRequest(async (request, response) => {
+
+    const token = request.header("token");
+    await authService.authUser(token, response);
 
     const queryAnnouncements = await db.collection("announcements")
         .where("id", "==", request.body.id)
@@ -239,6 +255,9 @@ exports.applyToAnnouncement = functions.region("europe-west1").https.onRequest(a
  */
 exports.approveAnnouncement = functions.region("europe-west1").https.onRequest(async (request, response) => {
 
+    const token = request.header("token");
+    await authService.authUser(token, response);
+
     functions.logger.info("[approveAnnouncement] request:", JSON.stringify(request.body));
     functions.logger.info("[approveAnnouncement] request:", request.body.coins);
 
@@ -283,6 +302,9 @@ exports.approveAnnouncement = functions.region("europe-west1").https.onRequest(a
  * @return
  */
 exports.deleteAnnouncement = functions.region("europe-west1").https.onRequest(async (request, response) => {
+
+    const token = request.header("token");
+    await authService.authUser(token, response);
 
     console.log('[deleteAnnouncement] request: ', JSON.stringify(request.body) );
     const user = await db.collection("users")
@@ -362,6 +384,9 @@ exports.deleteAnnouncement = functions.region("europe-west1").https.onRequest(as
  */
 exports.getAnnouncementsAppliedByUserId = functions.region("europe-west1").https.onRequest(async (request, response) => {
 
+    const token = request.header("token");
+    await authService.authUser(token, response);
+
     const queryApplications = await db.collection("applications")
         .where("userId", "==", request.body.userId)
         .get();
@@ -403,6 +428,9 @@ exports.getAnnouncementsAppliedByUserId = functions.region("europe-west1").https
  */
 exports.getCoursesToApprove = functions.region("europe-west1").https.onRequest(async (request, response) => {
 
+    const token = request.header("token");
+    await authService.authUser(token, response);
+
     const user = await db.collection("users")
         .doc(request.body.userId)
         .get();
@@ -434,6 +462,9 @@ exports.getCoursesToApprove = functions.region("europe-west1").https.onRequest(a
  * @return string
  */
 exports.approveCourse = functions.region("europe-west1").https.onRequest(async (request, response) => {
+
+    const token = request.header("token");
+    await authService.authUser(token, response);
 
     const user = await db.collection("users")
         .doc(request.body.userId)

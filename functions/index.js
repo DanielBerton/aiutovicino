@@ -10,8 +10,6 @@ exports.categories = require('./categories');
 exports.ranking = require('./ranking');
 
 const rankingService = require('./ranking');
-
-
 const db = getFirestore();
 
 

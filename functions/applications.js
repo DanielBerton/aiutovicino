@@ -13,7 +13,8 @@ const db = getFirestore();
  */
  exports.getUserApplications = functions.region("europe-west1").https.onRequest(async (request, response) => {
 
-    await authService.authUser(request.body.token, response);
+    const token = request.header("token");
+    await authService.authUser(token, response);
 
     const queryApplications = await db.collection("applications")
         .where("userId", "==", request.body.userId)
@@ -36,6 +37,9 @@ const db = getFirestore();
  */
  exports.applicationConfirmation = functions.region("europe-west1").https.onRequest(async (request, response) => {
 
+    const token = request.header("token");
+    await authService.authUser(token, response);
+    
     // get user data
     const queryUser = await db.collection("users").where("id", "==", request.body.userId).get();
     const user = queryUser.docs.map((doc) => {

@@ -13,6 +13,9 @@ const db = getFirestore();
  */
  exports.getNotApprovedUsers = functions.region("europe-west1").https.onRequest(async (request, response) => {
 
+    const token = request.header("token");
+    await authService.authUser(token, response);
+
     const queryAdminUserId = await db.collection("users").where("id", "==", request.body.userId).get();
     const userAdmin = queryAdminUserId.docs.map((doc) => {
         return doc.data()
@@ -42,6 +45,9 @@ const db = getFirestore();
 
 exports.getUserById = functions.region("europe-west1").https.onRequest(async (request, response) => {
 
+    const token = request.header("token");
+    await authService.authUser(token, response);
+
     functions.logger.info("[getUserById] userId: ", request.body.userId);
     const querySnapshot = await db.collection("users").where("id", "==", request.body.userId).get();
     const user = querySnapshot.docs.map((doc) => {
@@ -56,7 +62,9 @@ exports.getUserById = functions.region("europe-west1").https.onRequest(async (re
 
 exports.updateUser = functions.region("europe-west1").https.onRequest(async (request, response) => {
 
-    //validateToken
+    const token = request.header("token");
+    await authService.authUser(token, response);
+
     functions.logger.info("[updateUser] request: ", JSON.stringify(request.body));
 
     const querySnapshot = await db.collection("users").where("id", "==", request.body.userId).get();
@@ -97,6 +105,9 @@ exports.updateUser = functions.region("europe-west1").https.onRequest(async (req
  */
  exports.approveUser = functions.region("europe-west1").https.onRequest(async (request, response) => {
 
+    const token = request.header("token");
+    await authService.authUser(token, response);
+    
     const queryAdminUserId = await db.collection("users").where("id", "==", request.body.adminUserId).get();
     const userAdmin = queryAdminUserId.docs.map((doc) => {
         return doc.data()
@@ -141,6 +152,9 @@ exports.updateUser = functions.region("europe-west1").https.onRequest(async (req
  * @return string
  */
 exports.deleteUser = functions.region("europe-west1").https.onRequest(async (request, response) => {
+
+    const token = request.header("token");
+    await authService.authUser(token, response);
 
     const queryAdminUserId = await db.collection("users").where("id", "==", request.body.adminUserId).get();
     const userAdmin = queryAdminUserId.docs.map((doc) => {
