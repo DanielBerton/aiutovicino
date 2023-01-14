@@ -9,9 +9,10 @@
         "firebase-debug.log",
         "firebase-debug.*.log"
       ],
-      "predeploy": [
-        
-      ]
+      "predeploy": []
     }
-  ]
+  ],
+  "extensions": {
+    "firestore-send-email": "firebase/firestore-send-email@0.1.20"
+  }
 }

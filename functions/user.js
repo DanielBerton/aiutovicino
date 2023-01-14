@@ -28,18 +28,28 @@ const db = getFirestore();
             message: "Utente non amministratore, azione non possibile"
         }
         response.status(500).send(responseKo);
-        response.end()
+        response.end();
+        return;
     }
 
     const queryUser = await db.collection("users")
         .where("approved", "==", false)
     .get();
 
-    const user = queryUser.docs.map((doc) => {
+    const users = queryUser.docs.map((doc) => {
         return doc.data();
     });
+    functions.logger.info("[getNotApprovedUsers] users: ",JSON.stringify(users));
+    let newUsers = users.map(user => {
+        functions.logger.info("[getNotApprovedUsers] user: ", JSON.stringify(user) );
+        functions.logger.info("[getNotApprovedUsers] user: ", user.name);
+        functions.logger.info("[getNotApprovedUsers] user: ", user.surname);
+        user.name = utils.decrypt(user.name);
+        user.surname =utils.decrypt(user.surname);
+        return user;
+    });
 
-    response.send(user);
+    response.send(newUsers);
 
 });
 
@@ -79,7 +89,8 @@ exports.updateUser = functions.region("europe-west1").https.onRequest(async (req
             message: "Utente non esistente"
         }
         response.status(500).send(responseKo);
-        response.end()
+        response.end();
+        return;
     }
 
     /**
@@ -93,8 +104,8 @@ exports.updateUser = functions.region("europe-west1").https.onRequest(async (req
          await utils.updateRankingNickname(request.body.userId, request.body.nickname);
      }
 
-    user[0].surname = request.body.surname;
-    user[0].name = request.body.name;
+    user[0].surname = utils.encrypt(request.body.surname);
+    user[0].name = utils.encrypt(request.body.name);
     user[0].nickname = request.body.nickname;
     user[0].email = request.body.email;
     // don't override password if not in input request
@@ -104,6 +115,8 @@ exports.updateUser = functions.region("europe-west1").https.onRequest(async (req
     functions.logger.info("[updateUser] new user: ", JSON.stringify(user[0]));
     const res = await db.collection('users').doc(user[0].id).set(user[0]);
 
+    user[0].name = utils.decrypt(user[0].name);
+    user[0].surname = utils.decrypt(user[0].surname);
     response.send(user[0]);
 
 });
@@ -131,7 +144,8 @@ exports.updateUser = functions.region("europe-west1").https.onRequest(async (req
             message: "Utente non amministratore, azione non possibile"
         }
         response.status(500).send(responseKo);
-        response.end()
+        response.end();
+        return;
     }
 
     /** update user */
@@ -152,6 +166,8 @@ exports.updateUser = functions.region("europe-west1").https.onRequest(async (req
 
     await db.collection('usercoins').add(userCoin);
     await utils.updateRanking(request.body.userId, userCoin.nCoin);
+
+    utils.sendEmailUser(request.body.userId)
 
     response.send('User approved');
 

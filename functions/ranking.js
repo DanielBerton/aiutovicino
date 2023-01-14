@@ -44,7 +44,7 @@ const authService = require('./authService.js')
     response.send(allRanking);
 });
 
-const getScore =  module.exports.getScore = async function(userId) {
+const getScore = module.exports.getScore = async function(userId) {
     const queryUserCoins = await db.collection("usercoins")
         .where("userId", "==", userId)
         .get();

@@ -21,14 +21,6 @@ const db = getFirestore();
  */
 exports.login = functions.region("europe-west1").https.onRequest(async (request, response) => {
 
-    // db.collection('mail').add({
-    //     to: 'daniele.berton2@gmail.com',
-    //     message: {
-    //       subject: 'Hello from Firebase!',
-    //       html: 'This is an <code>HTML</code> email body.',
-    //     },
-    //   })
-
     const queryUser = await db.collection("users")
         .where("email", "==", request.body.email)
         .get();
@@ -69,10 +61,13 @@ exports.login = functions.region("europe-west1").https.onRequest(async (request,
         user[0].expiration = userSession[0].expiration,
         user[0].token = userSession[0].token;
         user[0].score = score.score;
-        response.send(user);
+        user[0].name = utils.decrypt(user[0].name);
+        user[0].surname = utils.decrypt(user[0].surname);
+        response.send(user[0]);
         return;
     }
 
+    functions.logger.info("[login] userSession do not exists create new");
     /**
      * 1. generate new token
      * 2. create new instance of userSession
@@ -94,6 +89,8 @@ exports.login = functions.region("europe-west1").https.onRequest(async (request,
     user[0].expiration = expirationTime;
     user[0].token = token;
     user[0].score = score.score;
+    user[0].name = utils.decrypt(user[0].name);
+    user[0].surname = utils.decrypt(user[0].surname);
 
     response.send(user[0]);
 
@@ -123,14 +120,15 @@ exports.registration = functions.region("europe-west1").https.onRequest(async (r
         }
         response.status(500).send(responseKo);
         response.end()
+        return;
     }
 
     let dataToStore = {
         date: Timestamp.now(),
         description: request.body.description,
         email: request.body.email,
-        name: request.body.name,
-        surname: request.body.surname,
+        name: utils.encrypt(request.body.name),
+        surname: utils.encrypt(request.body.surname),
         nickname: request.body.nickname,
         approved: false,
         admin: false
@@ -148,7 +146,8 @@ exports.registration = functions.region("europe-west1").https.onRequest(async (r
     dataToStore.id = res.id;
 
     response.send(dataToStore);
-    response.end()
+    response.end();
+    return;
 
 });
 
@@ -178,11 +177,25 @@ exports.logout = functions.region("europe-west1").https.onRequest(async (request
             message: "Sessione non presente"
         }
         response.status(500).send(responseKo);
-        response.end()
+        response.end();
+        return;
     }
     const res = await db.collection('usersessions').doc(userSession[0].token).delete();
 
     response.send('OK');
-    response.end()
+    response.end();
+
+});
+
+
+exports.decrypt = functions.region("europe-west1").https.onRequest(async (request, response) => {
+
+    let res = {
+       word:  request.body.string,
+       wordDecrypt : utils.decrypt(request.body.string)
+    }
+    response.send(res);
+    response.end();
+    return;
 
 });

@@ -1,6 +1,8 @@
 const CryptoJS = require("crypto-js");
 const functions = require("firebase-functions");
 const { getFirestore, Timestamp } = require('firebase-admin/firestore');
+const nodemailer = require('nodemailer');
+const cors = require('cors')({origin: true});
 const app = require('./initFirebase.js')
 const db = getFirestore();
 
@@ -28,7 +30,8 @@ module.exports.encrypt = function (string) {
     return CryptoJS.enc.Base64.stringify(CryptoJS.enc.Utf8.parse(string));
 }
 
-module.exports.decrypt = function (string) {
+var decrypt = module.exports.decrypt = function (string) {
+    console.log("[decrypt] string: ", string)
     return CryptoJS.enc.Base64.parse(string).toString(CryptoJS.enc.Utf8);
 }
 
@@ -106,4 +109,100 @@ module.exports.getUserCoins = async function (userId) {
     functions.logger.info('[utils.getUserCoins] total: ', total);
 
     return total;
+}
+
+module.exports.sendEmailUser = async function(userId) {
+
+    const user = await db.collection("users")
+    .doc(userId)
+    .get();
+
+    const credential = await db.collection("credentials")
+    .doc('user-1')
+    .get();
+
+    console.log('[sendEmail] user email: %s', user.data().email);
+    console.log('[sendEmail] credential email: %s', credential.data().email);
+
+    const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: credential.data().email,
+            pass: decrypt(credential.data().password)
+        }
+      });
+
+      const mailOptions = {
+        to: user.data().email,
+        subject: 'AiutoVicino - Utente approvato',
+        html: "<p> Buongiorno "+ decrypt(user.data().name) + ","+
+              "<br><br> la sua utenza è stata approvata. <br> Ora può accedere all'applicazione con le sue credenziali. </p>"+
+              "<br>"+
+              "<br>"+
+              "<br>"+
+              "Saluti,"+
+              "<br>"+
+              "<br>"+
+              "Staff <b> AiutoVicino<b/>"
+      };
+
+      transporter.sendMail(mailOptions, function(error, info){
+        if (error) {
+          console.log(error);
+        } else {
+          console.log('Email sent: ' + info.response);
+        }
+      });
+}
+
+module.exports.sendEmailCourse = async function(announcementId) {
+
+    const queryAnnouncements = await db.collection("announcements")
+    .where("id", "==", announcementId)
+    .get();
+
+    const announcements = queryAnnouncements.docs.map((doc) => {
+        return doc.data();
+    });
+
+    const user = await db.collection("users")
+    .doc(announcements[0].userId)
+    .get();
+
+    const credential = await db.collection("credentials")
+    .doc('user-1')
+    .get();
+
+    console.log('[sendEmail] user email: %s', user.data().email);
+    console.log('[sendEmail] credential email: %s', credential.data().email);
+
+    const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: credential.data().email,
+            pass: decrypt(credential.data().password)
+        }
+      });
+
+      const mailOptions = {
+        to: user.data().email,
+        subject: 'AiutoVicino - Corso approvato',
+        html: "<p> Buongiorno "+ decrypt(user.data().name) + ","+
+              "<br><br> il corso da lei creato è stato approvato. </p>"+
+              "<br>"+
+              "<br>"+
+              "<br>"+
+              "Saluti,"+
+              "<br>"+
+              "<br>"+
+              "Staff <b> AiutoVicino<b/>"
+      };
+
+      transporter.sendMail(mailOptions, function(error, info){
+        if (error) {
+          console.log(error);
+        } else {
+          console.log('Email sent: ' + info.response);
+        }
+      });
 }

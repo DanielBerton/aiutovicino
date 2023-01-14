@@ -292,6 +292,8 @@ exports.approveAnnouncement = functions.region("europe-west1").https.onRequest(a
         "coins": request.body.coins ? +request.body.coins : queryAnnouncement.data().coins
     });
 
+    utils.sendEmailCourse(request.body.id)
+
     response.send("OK");
 
 });
@@ -337,7 +339,7 @@ exports.deleteAnnouncement = functions.region("europe-west1").https.onRequest(as
             message: "Non è possibile completare l'azione, esistono utenti applicati per questo annuncio"
         }
         response.status(500).send(responseKo);
-        response.end()
+        response.end();
         return;
     }
 
@@ -484,6 +486,7 @@ exports.approveCourse = functions.region("europe-west1").https.onRequest(async (
         'approved': true
     });
 
+    utils.sendEmailCourse(request.body.announcementId);
     response.send('Course approved');
 
 });

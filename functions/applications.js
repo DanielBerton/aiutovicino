@@ -3,6 +3,8 @@ const { getFirestore } = require('firebase-admin/firestore');
 const app = require('./initFirebase.js')
 const authService = require('./authService.js')
 var utils = require('./utils.js');
+const nodemailer = require('nodemailer');
+const cors = require('cors')({origin: true});
 
 const db = getFirestore();
 
@@ -119,33 +121,10 @@ const db = getFirestore();
 
 });
 
-// exports.test = functions.region("europe-west1").https.onRequest(async (request, response) => {
+exports.test = functions.region("europe-west1").https.onRequest(async (request, response) => {
 
-//     functions.logger.info("[testAuth] request headers authorization:", request.headers.authorization);
+    await utils.sendEmailCourse();
 
-//     const token = request.header("token");
-//     functions.logger.info("[testAuth] request token:", token);
+    response.send('OK');
 
-//     // validateToken
-//     let authObj = await authService.authUser(token);
-//     if (!authObj.isAuth) {
-//         const responseKo = {
-//             message: "Utente non autorizzato per questa azione"
-//         }
-//         response.status(401).send(responseKo);
-//         response.end();
-//     }
-
-//     functions.logger.info("[getUserApplications] authObj: ", authObj);
-
-//     const queryApplications = await db.collection("applications")
-//         .where("userId", "==", request.body.userId)
-//     .get();
-
-//     const applications = queryApplications.docs.map((doc) => {
-//         return doc.data();
-//     });
-
-//     response.send(utils.createResponse(authObj.token, applications));
-
-// });
+});
