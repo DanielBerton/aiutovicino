@@ -34,9 +34,9 @@ E' possibile eseguire l'applicazione tramite l'emulatore interno di Android Stud
 
 Riportiamo di seguenti 2 utenti con i quali è possibile testare le funzionalità dell'applicazione:
 
-Utente Admin: mario.rossi@gmail.com psw: mariorossi
+Utente Admin: mario.rossi@gmail.com psw: #Mario123
 
-Utente Standard: test.unive@gmail.com psw: testunive
+Utente Standard: test.unive@gmail.com psw: #Unive123
 
 E' possibile creare altri utenti che possono essere approvati tramite la convalida dell'utente admin Mario Rossi.
 
@@ -45,10 +45,4 @@ E' possibile creare altri utenti che possono essere approvati tramite la convali
 Per l'utilizzo di AiutoVicino è necessario:
 - smartphone Android touchscreen con versione di sistema operativo almeno 6.0
 - connessione internet per collegamento a database
-
-
-### Componenti ancora non terminate o non adeguatamente testate
-
-Per la versione 1.0 del codice le seguenti funzioni non sono ancora funzionanti:
-- notifica ad utente quando la propria registrazione viene convalidata
 
